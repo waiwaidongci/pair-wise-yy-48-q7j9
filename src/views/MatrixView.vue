@@ -17,6 +17,13 @@ const rows = computed(() => store.rules.filter((rule) => {
   const action = store.devices.find((device) => device.id === rule.actionId)
   return (!showOnlyEnabled.value || rule.enabled) && (!query.value || `${rule.id}${trigger?.name}${action?.name}${rule.interlock}`.includes(query.value))
 }))
+
+/** 版本来源提示：来自初始数据/旧稿迁移，最近由哪个窗口在哪一批次写入 */
+function provenance(ruleId: string) {
+  const meta = store.entityMeta('rule', ruleId)
+  if (!meta) return ''
+  return `来源：${meta.originLabel} · 最近由 ${meta.updatedByLabel} 写入批次 ${meta.batchId}`
+}
 </script>
 
 <template>
@@ -51,7 +58,7 @@ const rows = computed(() => store.rules.filter((rule) => {
         <tbody>
           <tr v-for="rule in rows" :key="rule.id" :class="{ 'row-error': store.validations.some((item) => item.severity === '错误' && item.ruleIds.includes(rule.id)) }">
             <td><v-checkbox-btn :model-value="selectedIds.includes(rule.id)" @update:model-value="(value) => selectedIds = value ? [...selectedIds, rule.id] : selectedIds.filter((id) => id !== rule.id)" /></td>
-            <td><strong>{{ rule.id }}</strong></td>
+            <td><strong :title="provenance(rule.id)">{{ rule.id }}</strong></td>
             <td>{{ store.devices.find((device) => device.id === rule.triggerId)?.name }}</td>
             <td>{{ store.devices.find((device) => device.id === rule.actionId)?.name }}</td>
             <td><v-text-field :model-value="rule.delay" type="number" density="compact" hide-details style="width:80px" @update:model-value="store.updateRule(rule.id, { delay: Number($event) })" /></td>
@@ -59,7 +66,11 @@ const rows = computed(() => store.rules.filter((rule) => {
             <td><v-select :model-value="rule.priority" :items="[1,2,3]" density="compact" hide-details style="width:82px" @update:model-value="store.updateRule(rule.id, { priority: Number($event) as 1|2|3 })" /></td>
             <td>{{ rule.suppression }}</td>
             <td><v-switch :model-value="rule.enabled" color="primary" hide-details density="compact" @update:model-value="store.updateRule(rule.id, { enabled: Boolean($event) })" /></td>
-            <td><v-chip v-if="store.validations.some((item) => item.ruleIds.includes(rule.id))" size="x-small" color="error" variant="tonal">需处理</v-chip><span v-else class="muted">—</span></td>
+            <td>
+              <v-chip v-if="store.conflictRuleIds.has(rule.id)" size="x-small" color="error" variant="flat" class="conflict-chip" @click="$router.push('/review')">冲突待裁决</v-chip>
+              <v-chip v-else-if="store.validations.some((item) => item.ruleIds.includes(rule.id))" size="x-small" color="error" variant="tonal">需处理</v-chip>
+              <span v-else class="muted">—</span>
+            </td>
           </tr>
         </tbody>
       </v-data-table>
@@ -74,5 +85,6 @@ const rows = computed(() => store.rules.filter((rule) => {
 .table-wrap { overflow-x: auto; }
 .table-wrap :deep(table) { min-width: 1280px; }
 .row-error { background: #fff5f0; }
+.conflict-chip { cursor: pointer; }
 .muted { color: #849096; }
 </style>

@@ -50,6 +50,9 @@ const warningCount = computed(() => store.validations.filter((item) => item.seve
           <div><span>暖通专业</span><v-progress-linear :model-value="76" color="secondary" height="7" rounded /><strong>76%</strong></div>
           <div><span>智能化专业</span><v-progress-linear :model-value="64" color="warning" height="7" rounded /><strong>64%</strong></div>
           <v-alert type="info" variant="tonal" density="compact" class="mt-4">暖通专业新增 PF-2 反馈互锁，等待消防审阅人部分采纳。</v-alert>
+          <v-alert v-if="store.conflicts.length || store.staleChangeIds.length" type="error" variant="tonal" density="compact" class="mt-2">
+            {{ store.conflicts.length }} 个协同冲突待裁决 · {{ store.staleChangeIds.length }} 项已接受结论失效，交付包已被拦截。
+          </v-alert>
         </div>
       </aside>
     </div>

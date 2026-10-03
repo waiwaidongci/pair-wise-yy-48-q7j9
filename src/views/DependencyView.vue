@@ -42,7 +42,7 @@ function targetY(id: string) { return actionY(actions.value.findIndex((item) => 
           <path
             :d="`M 270 ${sourceY(rule.triggerId)} C 500 ${sourceY(rule.triggerId)}, 530 ${targetY(rule.actionId)}, 760 ${targetY(rule.actionId)}`"
             fill="none"
-            :class="['edge', { disabled: !rule.enabled, selected: selectedRule === rule.id, warning: store.validations.some((item) => item.ruleIds.includes(rule.id)) }]"
+            :class="['edge', { disabled: !rule.enabled, selected: selectedRule === rule.id, warning: store.validations.some((item) => item.ruleIds.includes(rule.id)), conflict: store.conflictRuleIds.has(rule.id) }]"
             :marker-end="store.validations.some((item) => item.ruleIds.includes(rule.id)) ? 'url(#arrow-warn)' : 'url(#arrow)'"
           />
           <circle :cx="515" :cy="(sourceY(rule.triggerId) + targetY(rule.actionId)) / 2" r="12" class="rule-node" />
@@ -72,6 +72,7 @@ svg { display: block; min-width: 900px; width: 100%; background: radial-gradient
 .edge { stroke: #60777e; stroke-width: 2; opacity: .75; cursor: pointer; }
 .edge.selected { stroke: #1e6772; stroke-width: 4; opacity: 1; }
 .edge.warning { stroke: #bd6f2a; stroke-dasharray: 7 5; opacity: 1; }
+.edge.conflict { stroke: #c53b2a; stroke-dasharray: 3 3; opacity: 1; }
 .edge.disabled { stroke: #aeb8bb; opacity: .35; }
 .rule-node { fill: white; stroke: #597177; stroke-width: 1.5; }
 .rule-id { fill: #4f666d; font-size: 8px; font-weight: 800; }

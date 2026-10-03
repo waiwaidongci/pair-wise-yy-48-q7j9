@@ -15,6 +15,15 @@ const items = [
   { to: '/dependency', title: '依赖图', icon: 'mdi-graph-outline' },
   { to: '/review', title: '版本审阅', icon: 'mdi-file-compare' },
 ]
+
+const syncChip = computed(() => {
+  if (!store.recovered) return { color: 'warning', icon: 'mdi-cloud-sync-outline', text: '恢复协同草稿…' }
+  if (store.writeError) return { color: 'error', icon: 'mdi-cloud-alert-outline', text: `写入失败，按原批次号重试（${store.outbox.length} 批待写）` }
+  if (store.outbox.length) return { color: 'warning', icon: 'mdi-cloud-upload-outline', text: `写入中（${store.outbox.length} 批）` }
+  if (store.conflicts.length) return { color: 'error', icon: 'mdi-source-branch-sync', text: `${store.conflicts.length} 个冲突待裁决` }
+  const count = store.peers.length + 1
+  return { color: 'success', icon: 'mdi-cloud-check-outline', text: count > 1 ? `草稿已同步 · ${count} 个窗口联调` : '草稿已同步' }
+})
 </script>
 
 <template>
@@ -30,7 +39,7 @@ const items = [
       <template #append>
         <div class="side-status">
           <div><span class="status-dot" :class="{ locked: store.locked }" />{{ store.locked ? '基线已签字锁定' : '协同编辑中' }}</div>
-          <small>版本 R{{ store.revision }} · {{ store.validations.length }} 项校验提示</small>
+          <small>版本 R{{ store.revision }} · {{ store.tabLabel }} · {{ store.validations.length }} 项校验提示</small>
         </div>
       </template>
     </v-navigation-drawer>
@@ -39,7 +48,7 @@ const items = [
       <v-app-bar-nav-icon class="d-md-none" @click="drawer = !drawer" />
       <v-app-bar-title>{{ title }}</v-app-bar-title>
       <v-spacer />
-      <v-chip size="small" variant="tonal" color="success" prepend-icon="mdi-cloud-check-outline">草稿自动保存</v-chip>
+      <v-chip size="small" variant="tonal" :color="syncChip.color" :prepend-icon="syncChip.icon">{{ syncChip.text }}</v-chip>
     </v-app-bar>
 
     <v-main>
