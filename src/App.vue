@@ -29,8 +29,9 @@ const items = [
       </v-list>
       <template #append>
         <div class="side-status">
-          <div><span class="status-dot" :class="{ locked: store.locked }" />{{ store.locked ? '基线已签字锁定' : '协同编辑中' }}</div>
-          <small>版本 R{{ store.revision }} · {{ store.validations.length }} 项校验提示</small>
+          <div><span class="status-dot" :class="{ locked: store.locked, recovering: store.recoveryState !== 'ready' }" />{{ store.recoveryState !== 'ready' ? '正在恢复协同草稿' : store.locked ? '基线已签字锁定' : '协同编辑中' }}</div>
+          <small>版本 R{{ store.revision }} · {{ store.validations.length }} 项校验提示 · {{ store.pendingConflicts.length }} 项冲突</small>
+          <small>草稿来源：{{ store.versionSource }}{{ store.draftId ? ' · ' + store.draftId.slice(0, 8) : '' }}</small>
         </div>
       </template>
     </v-navigation-drawer>
@@ -39,7 +40,43 @@ const items = [
       <v-app-bar-nav-icon class="d-md-none" @click="drawer = !drawer" />
       <v-app-bar-title>{{ title }}</v-app-bar-title>
       <v-spacer />
-      <v-chip size="small" variant="tonal" color="success" prepend-icon="mdi-cloud-check-outline">草稿自动保存</v-chip>
+      <v-chip size="small" variant="tonal" prepend-icon="mdi-account-multiple-outline" class="mr-2">{{ store.tabName }}</v-chip>
+      <v-chip
+        v-if="store.pendingConflicts.length"
+        size="small"
+        color="warning"
+        variant="tonal"
+        prepend-icon="mdi-alert-rhombus-outline"
+        class="mr-2"
+        @click="$router.push('/review')"
+      >{{ store.pendingConflicts.length }} 项冲突待裁决</v-chip>
+      <v-chip
+        v-if="store.recoveryState !== 'ready'"
+        size="small"
+        color="info"
+        variant="tonal"
+        prepend-icon="mdi-database-sync-outline"
+        class="mr-2"
+      >草稿恢复中…</v-chip>
+      <v-chip
+        v-if="store.writeState === 'retrying'"
+        size="small"
+        color="warning"
+        variant="tonal"
+        prepend-icon="mdi-refresh"
+        class="mr-2"
+      >写入失败，按批次 {{ store.lastBatchId }} 第 {{ store.retryCount }} 次重试</v-chip>
+      <v-chip
+        v-if="store.writeState === 'failed'"
+        size="small"
+        color="error"
+        variant="tonal"
+        prepend-icon="mdi-cloud-alert-outline"
+        class="mr-2"
+        @click="store.retryLastWrite"
+      >写入失败，点击按原批次 {{ store.lastBatchId }} 重试</v-chip>
+      <v-chip v-if="store.writeState === 'idle' && store.recoveryState === 'ready'" size="small" color="success" variant="tonal" prepend-icon="mdi-cloud-check-outline">草稿已同步</v-chip>
+      <v-chip v-else size="small" color="info" variant="tonal" prepend-icon="mdi-cloud-sync-outline">保存中</v-chip>
     </v-app-bar>
 
     <v-main>
@@ -61,5 +98,6 @@ const items = [
 .side-status small { display: block; margin-top: 6px; color: #93a7ad; font-size: 9px; }
 .status-dot { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: #59b58a; }
 .status-dot.locked { background: #d79a45; }
+.status-dot.recovering { background: #4a90a4; }
 .app-bar { border-bottom: 1px solid #e0e5e5; background: white; }
 </style>

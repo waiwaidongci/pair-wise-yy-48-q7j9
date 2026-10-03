@@ -13,9 +13,17 @@ const filtered = computed(() => store.devices.filter((item) => (floor.value === 
 
 function addDevice() {
   if (!form.value.id || !form.value.name || !form.value.address) return
-  store.devices.push({ ...form.value })
+  store.addDevice({ ...form.value })
   dialog.value = false
   form.value = { id: '', name: '', type: '感烟探测器', floor: '1F', zone: 'A 区', address: '' }
+}
+
+function removeDevice(id: string) {
+  const ruleCount = store.rules.filter((rule) => rule.triggerId === id || rule.actionId === id).length
+  const msg = ruleCount > 0
+    ? `删除设备 ${id} 后，仍有 ${ruleCount} 条规则引用它，将形成失效引用并挡住交付包。确认删除？`
+    : `确认删除设备 ${id}？`
+  if (window.confirm(msg)) store.deleteDevice(id)
 }
 </script>
 
@@ -35,7 +43,7 @@ function addDevice() {
 
     <div class="panel">
       <v-table hover>
-        <thead><tr><th>点位编号</th><th>设备名称</th><th>类型</th><th>楼层 / 分区</th><th>回路地址</th><th>联动关系</th><th>状态</th></tr></thead>
+        <thead><tr><th>点位编号</th><th>设备名称</th><th>类型</th><th>楼层 / 分区</th><th>回路地址</th><th>联动关系</th><th>状态</th><th></th></tr></thead>
         <tbody>
           <tr v-for="device in filtered" :key="device.id">
             <td class="mono">{{ device.id }}</td>
@@ -45,6 +53,7 @@ function addDevice() {
             <td class="mono">{{ device.address }}</td>
             <td>{{ store.rules.filter((rule) => rule.triggerId === device.id || rule.actionId === device.id).length }} 条</td>
             <td><v-chip size="small" color="success" variant="tonal">在线</v-chip></td>
+            <td><v-btn icon="mdi-delete-outline" size="small" variant="text" color="error" @click="removeDevice(device.id)" /></td>
           </tr>
         </tbody>
       </v-table>

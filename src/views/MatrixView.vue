@@ -59,7 +59,11 @@ const rows = computed(() => store.rules.filter((rule) => {
             <td><v-select :model-value="rule.priority" :items="[1,2,3]" density="compact" hide-details style="width:82px" @update:model-value="store.updateRule(rule.id, { priority: Number($event) as 1|2|3 })" /></td>
             <td>{{ rule.suppression }}</td>
             <td><v-switch :model-value="rule.enabled" color="primary" hide-details density="compact" @update:model-value="store.updateRule(rule.id, { enabled: Boolean($event) })" /></td>
-            <td><v-chip v-if="store.validations.some((item) => item.ruleIds.includes(rule.id))" size="x-small" color="error" variant="tonal">需处理</v-chip><span v-else class="muted">—</span></td>
+            <td>
+              <v-chip v-if="store.validations.some((item) => item.ruleIds.includes(rule.id))" size="x-small" color="error" variant="tonal">需处理</v-chip>
+              <v-chip v-if="store.conflictsForEntity('rule', rule.id).length" size="x-small" color="warning" variant="tonal" class="ml-1" @click="$router.push('/review')">协同冲突 {{ store.conflictsForEntity('rule', rule.id).length }}</v-chip>
+              <span v-if="!store.validations.some((item) => item.ruleIds.includes(rule.id)) && !store.conflictsForEntity('rule', rule.id).length" class="muted">—</span>
+            </td>
           </tr>
         </tbody>
       </v-data-table>
